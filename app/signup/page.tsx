@@ -44,13 +44,16 @@ export default function SignupPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim(), password, full_name: fullName.trim() }),
       })
-      const json = await res.json() as { data?: unknown; error?: string }
+
+      // Safely parse — if route crashed, response may not be JSON
+      let json: { data?: unknown; error?: string } = {}
+      try { json = await res.json() } catch { json = { error: `Server error (${res.status})` } }
 
       if (!res.ok) {
         if (json.error === 'ALREADY_EXISTS') {
           setFormState({ status: 'error', message: 'An account with this email already exists. Sign in instead.' })
         } else {
-          setFormState({ status: 'error', message: json.error ?? 'Something went wrong.' })
+          setFormState({ status: 'error', message: json.error ?? `Error ${res.status} — try again.` })
         }
         return
       }
